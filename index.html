@@ -3,436 +3,492 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SparkAI | Power Builder 2026</title>
+    <title>Nexus AI Builder (Simplified)</title>
     <style>
-        /* --- CSS VARIABLES & THEME --- */
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f9fafb;
-            --sidebar-bg: #f3f4f6;
             --border-color: #e5e7eb;
             --text-main: #111827;
             --text-muted: #6b7280;
             --accent: #3b82f6;
             --accent-hover: #2563eb;
-            --chat-user: #eff6ff;
-            --chat-ai: #ffffff;
-            --code-bg: #1e1e1e;
-            --code-text: #d4d4d4;
+            --sidebar-width: 280px;
+            --chat-width: 400px;
         }
 
-        [data-theme="dark"] {
-            --bg-primary: #111827;
-            --bg-secondary: #1f2937;
-            --sidebar-bg: #0f172a;
-            --border-color: #374151;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --accent: #60a5fa;
-            --chat-user: #1e3a8a;
-            --chat-ai: #1f2937;
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
-
-        body { background: var(--bg-primary); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
-
-        /* --- LAYOUT --- */
-        #sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
+        /* --- Sidebar --- */
+        aside {
+            width: var(--sidebar-width);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
+            background: var(--bg-secondary);
         }
 
-        #main-workspace {
-            flex: 1;
+        .sidebar-header {
+            padding: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
             display: flex;
-            flex-direction: row;
-        }
-
-        .pane { height: 100%; display: flex; flex-direction: column; border-right: 1px solid var(--border-color); }
-
-        #chat-pane { width: 380px; min-width: 320px; }
-        #preview-pane { flex: 1; background: var(--bg-secondary); }
-
-        /* --- UI COMPONENTS --- */
-        .header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .history-item {
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s;
+        }
+
+        .history-item:hover { background: #f3f4f6; }
+        .history-item.active { background: #eff6ff; color: var(--accent); font-weight: 500; }
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
         }
 
         .btn {
-            padding: 8px 12px;
+            width: 100%;
+            padding: 10px;
             border-radius: 6px;
             border: 1px solid var(--border-color);
-            background: var(--bg-primary);
+            background: white;
             cursor: pointer;
-            font-size: 13px;
-            transition: 0.2s;
-            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
         .btn-primary { background: var(--accent); color: white; border: none; }
         .btn-primary:hover { background: var(--accent-hover); }
 
-        /* --- CHAT SYSTEM --- */
+        /* --- Chat Panel --- */
+        .chat-container {
+            width: var(--chat-width);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
         #chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 16px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 15px;
         }
 
-        .msg {
+        .message {
+            max-width: 85%;
             padding: 12px 16px;
             border-radius: 12px;
-            max-width: 88%;
-            font-size: 14px;
+            font-size: 0.95rem;
             line-height: 1.5;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        .msg-user { align-self: flex-end; background: var(--chat-user); border: 1px solid var(--border-color); }
-        .msg-ai { align-self: flex-start; background: var(--chat-ai); border: 1px solid var(--border-color); }
+        .message.user {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+        }
 
-        .thinking { font-style: italic; color: var(--text-muted); font-size: 12px; margin: 8px 16px; }
+        .message.ai {
+            align-self: flex-start;
+            background: #f3f4f6;
+            color: var(--text-main);
+        }
 
-        .input-area { padding: 16px; border-top: 1px solid var(--border-color); background: var(--bg-primary); }
+        /* Thinking Animation */
+        .thinking-box {
+            background: #f9fafb;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .thinking-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #ddd;
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
         #user-input {
             width: 100%;
             padding: 12px;
-            border-radius: 8px;
             border: 1px solid var(--border-color);
-            background: var(--bg-secondary);
-            color: var(--text-main);
+            border-radius: 8px;
             resize: none;
             outline: none;
+            transition: border-color 0.2s;
         }
 
-        /* --- PREVIEW & CODE --- */
-        .tabs { display: flex; background: var(--sidebar-bg); padding: 6px; gap: 4px; }
-        .tab { padding: 6px 16px; cursor: pointer; border-radius: 4px; font-size: 12px; color: var(--text-muted); }
-        .tab.active { background: var(--bg-primary); font-weight: bold; color: var(--text-main); }
+        #user-input:focus { border-color: var(--accent); }
 
-        #iframe-container { flex: 1; position: relative; }
-        iframe { width: 100%; height: 100%; border: none; background: white; }
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f3f4f6;
+        }
+
+        .workspace-tabs {
+            background: white;
+            padding: 10px 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 20px;
+        }
+
+        .tab {
+            padding: 10px 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .preview-area {
+            flex: 1;
+            padding: 20px;
+            position: relative;
+        }
+
+        #live-preview {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
 
         #code-editor {
-            flex: 1;
-            background: var(--code-bg);
-            color: var(--code-text);
-            padding: 16px;
-            font-family: 'Fira Code', 'Courier New', monospace;
-            font-size: 13px;
-            white-space: pre;
-            overflow: auto;
+            width: 100%;
+            height: 100%;
             display: none;
-        }
-
-        /* --- PROJECT LIST --- */
-        .project-item {
-            padding: 10px 16px;
-            cursor: pointer;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
             font-size: 14px;
-            display: flex;
-            justify-content: space-between;
+        }
+
+        /* --- Settings Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
             align-items: center;
-        }
-        .project-item:hover { background: var(--border-color); }
-        .project-item.active { background: var(--accent); color: white; }
-
-        /* --- SETTINGS MODAL --- */
-        #settings-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--bg-primary); padding: 24px; border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); z-index: 100;
-            display: none; width: 420px; border: 1px solid var(--border-color);
+            z-index: 1000;
         }
 
-        .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 99; display: none;
-            backdrop-filter: blur(2px);
+        .modal {
+            background: white;
+            width: 500px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
         }
 
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
-        .form-input { 
-            width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color);
-            background: var(--bg-secondary); color: var(--text-main); font-size: 14px;
-        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; }
 
-        /* Syntax Color Ticks */
-        .syn-tag { color: #569cd6; }
-        .syn-attr { color: #9cdcfe; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div class="header">
-            <strong style="font-size: 18px; letter-spacing: -0.5px;">✨ SparkAI</strong>
-            <button class="btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓</button>
+    <aside>
+        <div class="sidebar-header">
+            <span>⚡ Nexus AI</span>
         </div>
-        <div style="padding: 16px;">
-            <button class="btn btn-primary" style="width: 100%; font-weight: 600;" onclick="createNewProject()">+ New Project</button>
+        <div class="history-list" id="history-list"></div>
+        <div class="sidebar-footer">
+            <button class="btn" style="margin-bottom: 10px;" onclick="createNewProject()">+ New Project</button>
+            <button class="btn" onclick="toggleSettings(true)">⚙️ API Settings</button>
         </div>
-        <div id="project-list" style="flex: 1; overflow-y: auto;"></div>
-        <div style="padding: 16px; border-top: 1px solid var(--border-color);">
-            <button class="btn" style="width: 100%; margin-bottom: 8px;" onclick="openSettings()">⚙️ Settings</button>
-            <button class="btn" style="width: 100%; color: #ef4444;" onclick="clearHistory()">🗑 Clear All</button>
-        </div>
-    </div>
+    </aside>
 
-    <div id="main-workspace">
-        <div id="chat-pane" class="pane">
-            <div class="header"><span>AI Architect</span></div>
-            <div id="chat-messages"></div>
-            <div id="thinking-indicator" class="thinking" style="display: none;">SparkAI is conceptualizing...</div>
-            <div class="input-area">
-                <textarea id="user-input" placeholder="Type what you want to build..." rows="3"></textarea>
-                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleSendMessage()">Generate Site</button>
+    <section class="chat-container">
+        <div id="chat-messages">
+            <div class="message ai">Hello! I'm your AI Web Builder. The API endpoint is now set to default. Just enter your Key and Model in settings to start!</div>
+        </div>
+        <div id="thinking-indicator" style="padding: 0 20px"></div>
+        <div class="chat-input-area">
+            <textarea id="user-input" placeholder="e.g. Build a modern landing page..." rows="3"></textarea>
+            <button class="btn btn-primary" style="margin-top: 10px;" onclick="handleSend()">Send Request</button>
+        </div>
+    </section>
+
+    <main class="workspace">
+        <div class="workspace-tabs">
+            <div class="tab active" onclick="switchTab('preview')">Preview</div>
+            <div class="tab" onclick="switchTab('code')">Code</div>
+            <div style="flex: 1"></div>
+            <div class="tab" style="color: var(--accent)" onclick="downloadProject()">Download .HTML</div>
+        </div>
+        <div class="preview-area">
+            <iframe id="live-preview"></iframe>
+            <div id="code-editor"></div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <h3 style="margin-bottom: 20px;">API Configuration</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">API Endpoint is now locked to default OpenAI-style chat completions.</p>
+            
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" id="api-key" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+                <label>Model Name</label>
+                <input type="text" id="api-model" placeholder="gpt-4o">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" style="flex: 1" onclick="saveSettings()">Save Settings</button>
+                <button class="btn" style="flex: 1" onclick="toggleSettings(false)">Close</button>
             </div>
         </div>
-
-        <div id="preview-pane" class="pane">
-            <div class="tabs">
-                <div class="tab active" id="tab-preview" onclick="switchTab('preview')">Live Preview</div>
-                <div class="tab" id="tab-code" onclick="switchTab('code')">Source Code</div>
-                <div style="flex: 1;"></div>
-                <button class="btn" onclick="downloadCode()">💾 Download .html</button>
-            </div>
-            <div id="iframe-container">
-                <iframe id="preview-frame"></iframe>
-                <div id="code-editor"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="overlay" id="overlay" onclick="closeSettings()"></div>
-    <div id="settings-modal">
-        <h3 style="margin-bottom: 20px;">Builder Configuration</h3>
-        
-        <div class="form-group">
-            <label class="form-label">OpenRouter API Key</label>
-            <input type="password" id="api-key" class="form-input" placeholder="sk-or-...">
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label">Preset Model</label>
-            <select id="model-select" class="form-input">
-                <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Free)</option>
-                <option value="google/gemini-3-pro-preview">Gemini 3 Pro Preview</option>
-                <option value="openai/gpt-5.3-codex">GPT-5.3 Codex</option>
-                <option value="anthropic/claude-4.6-sonnet">Claude 4.6 Sonnet</option>
-                <option value="deepseek/deepseek-v3.2">DeepSeek V3.2 (Value)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Custom Model ID (Overrides Preset)</label>
-            <input type="text" id="custom-model" class="form-input" placeholder="e.g. meta-llama/llama-3.1-405b">
-            <small style="font-size: 10px; color: var(--text-muted);">Leave empty to use the dropdown selection.</small>
-        </div>
-        
-        <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="saveSettings()">Apply Changes</button>
     </div>
 
     <script>
-        /* --- CORE LOGIC --- */
         let state = {
-            projects: [],
+            projects: JSON.parse(localStorage.getItem('nexus_projects')) || [],
             currentProjectId: null,
-            settings: {
-                apiKey: '',
-                model: 'google/gemini-2.0-flash-exp:free',
-                customModel: '',
-                theme: 'light'
+            settings: JSON.parse(localStorage.getItem('nexus_settings')) || {
+                key: '',
+                model: ''
             }
         };
 
-        const initialHTML = `<!DOCTYPE html><html><head><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f0f2f5;}.card{background:white;padding:2rem;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);text-align:center;}h1{color:#3b82f6;}</style></head><body><div class="card"><h1>SparkAI Online</h1><p>Start a conversation to generate your site!</p></div></body></html>`;
+        const DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
-        window.onload = () => {
-            const saved = localStorage.getItem('spark_state_v2');
-            if (saved) state = JSON.parse(saved);
-            applyTheme();
-            if (state.projects.length === 0) createNewProject();
-            else loadProject(state.currentProjectId || state.projects[0].id);
-            renderProjectList();
-        };
+        function init() {
+            renderHistory();
+            if (state.projects.length > 0) {
+                loadProject(state.projects[0].id);
+            }
+            if (!state.settings.key) {
+                setTimeout(() => toggleSettings(true), 500);
+            }
+        }
 
-        function saveToLocal() { localStorage.setItem('spark_state_v2', JSON.stringify(state)); }
+        function toggleSettings(show) {
+            document.getElementById('settings-modal').style.display = show ? 'flex' : 'none';
+            if (show) {
+                document.getElementById('api-key').value = state.settings.key;
+                document.getElementById('api-model').value = state.settings.model;
+            }
+        }
+
+        function saveSettings() {
+            state.settings = {
+                key: document.getElementById('api-key').value,
+                model: document.getElementById('api-model').value
+            };
+            localStorage.setItem('nexus_settings', JSON.stringify(state.settings));
+            alert('Settings saved!');
+            toggleSettings(false);
+        }
 
         function createNewProject() {
             const id = Date.now().toString();
-            state.projects.unshift({ id, name: "Project " + (state.projects.length + 1), messages: [{ role: 'ai', text: "Ready to build. What's the plan?" }], code: initialHTML });
+            const newProj = {
+                id,
+                title: "New Website",
+                chat: [],
+                code: "<html><body style='display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;'><h1>Project ready for AI generation</h1></body></html>"
+            };
+            state.projects.unshift(newProj);
+            state.currentProjectId = id;
+            saveState();
+            renderHistory();
             loadProject(id);
-            renderProjectList();
-            saveToLocal();
         }
 
         function loadProject(id) {
             state.currentProjectId = id;
-            const p = state.projects.find(x => x.id === id);
-            const box = document.getElementById('chat-messages');
-            box.innerHTML = '';
-            p.messages.forEach(m => appendMessage(m.role, m.text, false));
-            updatePreview(p.code);
-            renderProjectList();
-        }
-
-        async function handleSendMessage() {
-            const input = document.getElementById('user-input');
-            const val = input.value.trim();
-            if (!val) return;
-
-            appendMessage('user', val);
-            input.value = '';
-            
-            const p = state.projects.find(x => x.id === state.currentProjectId);
-            p.messages.push({ role: 'user', text: val });
-
-            const th = document.getElementById('thinking-indicator');
-            th.style.display = 'block';
-
-            try {
-                let code = "";
-                if (state.settings.apiKey) {
-                    const activeModel = state.settings.customModel.trim() || state.settings.model;
-                    code = await callOpenRouter(val, p.code, activeModel);
-                } else {
-                    await new Promise(r => setTimeout(r, 1500));
-                    code = simulateCode(val);
-                }
-                p.code = code;
-                const reply = "Generation complete. View the changes in the preview pane.";
-                p.messages.push({ role: 'ai', text: reply });
-                appendMessage('ai', reply);
-                updatePreview(code);
-                saveToLocal();
-            } catch (e) {
-                appendMessage('ai', "Error: " + e.message);
-            } finally { th.style.display = 'none'; }
-        }
-
-        async function callOpenRouter(prompt, currentCode, model) {
-            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${state.settings.apiKey}`, "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        { role: "system", content: "You are a senior full-stack dev. Return ONLY a single block of valid, complete HTML including CSS and JS. Do not explain anything." },
-                        { role: "user", content: `Context: ${currentCode}\n\nTask: ${prompt}` }
-                    ]
-                })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error.message);
-            let content = data.choices[0].message.content;
-            return content.replace(/```html|```/g, '').trim();
-        }
-
-        function simulateCode(prompt) {
-            return `<!DOCTYPE html><html><head><style>body{font-family:sans-serif;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#fafafa;} .box{background:white;border:2px solid #3b82f6;padding:40px;border-radius:20px;text-align:center;}</style></head><body><div class="box"><h1>Generated Offline</h1><p>Request: ${prompt}</p><small>Connect your API key in settings for real AI power!</small></div></body></html>`;
-        }
-
-        /* --- UI HELPERS --- */
-        function appendMessage(role, text, scroll = true) {
-            const div = document.createElement('div');
-            div.className = `msg msg-${role}`;
-            div.innerText = text;
-            const c = document.getElementById('chat-messages');
-            c.appendChild(div);
-            if (scroll) c.scrollTop = c.scrollHeight;
+            const proj = state.projects.find(p => p.id === id);
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML = '';
+            proj.chat.forEach(msg => appendMessage(msg.role, msg.content));
+            updatePreview(proj.code);
+            renderHistory();
         }
 
         function updatePreview(code) {
-            document.getElementById('preview-frame').srcdoc = code;
-            document.getElementById('code-editor').innerText = code;
+            document.getElementById('live-preview').srcdoc = code;
+            document.getElementById('code-editor').textContent = code;
         }
 
-        function switchTab(t) {
-            document.getElementById('tab-preview').classList.toggle('active', t === 'preview');
-            document.getElementById('tab-code').classList.toggle('active', t === 'code');
-            document.getElementById('preview-frame').style.display = t === 'preview' ? 'block' : 'none';
-            document.getElementById('code-editor').style.display = t === 'code' ? 'block' : 'none';
+        function switchTab(tab) {
+            const preview = document.getElementById('live-preview');
+            const editor = document.getElementById('code-editor');
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            preview.style.display = tab === 'preview' ? 'block' : 'none';
+            editor.style.display = tab === 'code' ? 'block' : 'none';
         }
 
-        function renderProjectList() {
-            const list = document.getElementById('project-list');
+        async function handleSend() {
+            const input = document.getElementById('user-input');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+            if (!state.settings.key) { alert("Please enter an API Key."); toggleSettings(true); return; }
+
+            if (!state.currentProjectId) createNewProject();
+            appendMessage('user', prompt);
+            input.value = '';
+            
+            const thinkingArea = document.getElementById('thinking-indicator');
+            thinkingArea.innerHTML = `<div class="thinking-box">
+                <div class="thinking-step"><div class="spinner"></div> Planning build...</div>
+                <div id="step-2" class="thinking-step hidden">🎨 Coding visual elements...</div>
+            </div>`;
+            setTimeout(() => document.getElementById('step-2')?.classList.remove('hidden'), 1500);
+
+            try {
+                const response = await fetchAI(prompt);
+                const code = extractCode(response);
+                thinkingArea.innerHTML = '';
+                
+                const proj = state.projects.find(p => p.id === state.currentProjectId);
+                proj.chat.push({ role: 'user', content: prompt }, { role: 'ai', content: "Updated code generated." });
+                proj.code = code;
+                proj.title = prompt.substring(0, 20) + "...";
+                
+                saveState();
+                updatePreview(code);
+                renderHistory();
+            } catch (e) {
+                thinkingArea.innerHTML = '';
+                appendMessage('ai', "Error: " + e.message);
+            }
+        }
+
+        async function fetchAI(prompt) {
+            const proj = state.projects.find(p => p.id === state.currentProjectId);
+            const res = await fetch(DEFAULT_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.settings.key}` },
+                body: JSON.stringify({
+                    model: state.settings.model || "gpt-4o",
+                    messages: [
+                        { role: "system", content: "Expert web dev. Output ONLY full HTML/CSS/JS code starting with <!DOCTYPE html>." },
+                        { role: "user", content: `Existing code: ${proj.code}\n\nChange requested: ${prompt}` }
+                    ]
+                })
+            });
+            if (!res.ok) throw new Error('API request failed. Check your Key and Model.');
+            const data = await res.json();
+            return data.choices[0].message.content;
+        }
+
+        function extractCode(text) {
+            const match = text.match(/<html[\s\S]*<\/html>/i) || text.match(/```html([\s\S]*?)```/);
+            return match ? (match[1] || match[0]) : text;
+        }
+
+        function appendMessage(role, content) {
+            const chatBox = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = content;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
             list.innerHTML = '';
             state.projects.forEach(p => {
-                const d = document.createElement('div');
-                d.className = `project-item ${p.id === state.currentProjectId ? 'active' : ''}`;
-                d.innerHTML = `<span onclick="loadProject('${p.id}')">📂 ${p.name}</span><span onclick="deleteProject('${p.id}')" style="font-size:10px; opacity:0.5;">✕</span>`;
-                list.appendChild(d);
+                const item = document.createElement('div');
+                item.className = `history-item ${p.id === state.currentProjectId ? 'active' : ''}`;
+                item.textContent = "🌐 " + p.title;
+                item.onclick = () => loadProject(p.id);
+                list.appendChild(item);
             });
         }
 
-        function deleteProject(id) {
-            state.projects = state.projects.filter(x => x.id !== id);
-            if (state.projects.length === 0) createNewProject();
-            else loadProject(state.projects[0].id);
-            renderProjectList();
-            saveToLocal();
-        }
+        function saveState() { localStorage.setItem('nexus_projects', JSON.stringify(state.projects)); }
 
-        /* --- SETTINGS & THEME --- */
-        function openSettings() {
-            document.getElementById('api-key').value = state.settings.apiKey;
-            document.getElementById('model-select').value = state.settings.model;
-            document.getElementById('custom-model').value = state.settings.customModel || '';
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('settings-modal').style.display = 'block';
-        }
-
-        function closeSettings() {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('settings-modal').style.display = 'none';
-        }
-
-        function saveSettings() {
-            state.settings.apiKey = document.getElementById('api-key').value;
-            state.settings.model = document.getElementById('model-select').value;
-            state.settings.customModel = document.getElementById('custom-model').value;
-            saveToLocal();
-            closeSettings();
-        }
-
-        function toggleTheme() {
-            state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light';
-            applyTheme();
-            saveToLocal();
-        }
-
-        function applyTheme() { document.body.setAttribute('data-theme', state.settings.theme); }
-
-        function downloadCode() {
-            const p = state.projects.find(x => x.id === state.currentProjectId);
-            const blob = new Blob([p.code], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
+        function downloadProject() {
+            const proj = state.projects.find(p => p.id === state.currentProjectId);
+            const blob = new Blob([proj.code], { type: 'text/html' });
             const a = document.createElement('a');
-            a.href = url;
-            a.download = p.name.replace(/\s/g, '_').toLowerCase() + ".html";
+            a.href = URL.createObjectURL(blob);
+            a.download = `nexus-web-${proj.id}.html`;
             a.click();
         }
 
-        function clearHistory() {
-            if (confirm("Delete all projects?")) {
-                localStorage.removeItem('spark_state_v2');
-                location.reload();
-            }
-        }
+        init();
     </script>
 </body>
 </html>
